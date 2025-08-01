@@ -24,6 +24,12 @@ MAIN_COMPOSE="/home/martial/docker/docker-compose-vpn.yml"
 BASIC_AUTH_FILE="/home/martial/docker/secrets/basic_auth_credentials"
 
 # --------------------------------------
+# Install required packages for setup
+  sudo apt update
+  sudo apt install -y acl apache2-utils apt-transport-https argon2 ca-certificates curl gnupg \
+    htop libnss-resolve lsb-release nano ncdu net-tools netcat-traditional ntp pwgen \
+    software-properties-common ufw unzip zip
+    
 # (1) ASK TO INSTALL DOCKER & DOCKER COMPOSE
 
 read -p "Would you like to install Docker and Docker Compose? [y/n]: " install_docker
@@ -108,12 +114,6 @@ echo "You selected: ${unique_apps[*]}"
 if printf '%s\n' "${unique_apps[@]}" | grep -qi '^traefik$'; then
   echo ""
   echo "Traefik selected: Installing required packages and setting up basic auth..."
-
-  # Install required packages for Traefik setup
-  sudo apt update
-  sudo apt install -y acl apache2-utils apt-transport-https argon2 ca-certificates curl gnupg \
-    htop libnss-resolve lsb-release nano ncdu net-tools netcat-traditional ntp pwgen \
-    software-properties-common ufw unzip zip
 
   # Prompt for HTTP basic auth credentials
   read -p "Enter HTTP_USERNAME for Traefik basic auth: " HTTP_USERNAME
