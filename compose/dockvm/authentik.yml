@@ -37,7 +37,6 @@ services:
     volumes:
       - $DOCKERDIR/appdata/authentik/media:/media
       - $DOCKERDIR/appdata/authentik/custom-templates:/templates
-      # - $DOCKERDIR/appdata/authentik/geoip/data:/geoip # requires geoipupdate
     labels:
       - "traefik.enable=true"
       # HTTP Routers
