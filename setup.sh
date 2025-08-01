@@ -153,4 +153,4 @@ done
 
 echo ""
 echo "Setup complete. To start or restart your services, run:"
-echo "docker compose -f $MAIN_COMPOSE up -d"
+echo "docker compose --profile all -f $MAIN_COMPOSE up -d"
