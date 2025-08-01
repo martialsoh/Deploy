@@ -32,6 +32,3 @@ services:
     volumes:
       - $DOCKERDIR/appdata/authentik/media:/media
       - $DOCKERDIR/appdata/authentik/custom-templates:/templates
-      # - $DOCKERDIR/appdata/authentik/geoip/data:/geoip # requires geoipupdate
-      # - /var/run/docker.sock:/var/run/docker.sock # Uncomment if NOT using socket-proxy
-      # - $DOCKERDIR/appdata/traefik3/cert_export:/certs:ro # If NOT using reverse proxy, manually map in certificates
