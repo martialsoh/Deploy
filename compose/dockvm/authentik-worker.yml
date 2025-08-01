@@ -25,12 +25,10 @@ services:
       - AUTHENTIK_POSTGRESQL__USER=${AUTHENTIK_POSTGRESQL__USER}
       - AUTHENTIK_POSTGRESQL__PASSWORD=${AUTHENTIK_POSTGRESQL__PASSWORD}
       - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
-      - AUTHENTIK_LOG_LEVEL=info   # debug, info, warning, error, trace
+      - AUTHENTIK_LOG_LEVEL=info  # debug, info, warning, error, trace
       - AUTHENTIK_DISABLE_STARTUP_ANALYTICS=true
       - AUTHENTIK_DISABLE_UPDATE_CHECK=false
-      - AUTHENTIK_ERROR_REPORTING__ENABLED=false
-      - AUTHENTIK_ERROR_REPORTING__ENABLED=false
-      
+      - AUTHENTIK_ERROR_REPORTING__ENABLED=false      
     volumes:
       - $DOCKERDIR/appdata/authentik/media:/media
       - $DOCKERDIR/appdata/authentik/custom-templates:/templates
