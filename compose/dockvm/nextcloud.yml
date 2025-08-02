@@ -20,9 +20,9 @@ services:
       - $DOCKERDIR/appdata/nextcloud:/var/www/html
       - $NEXTCLOUD_FOLDER:/var/www/html/data
     environment:
-      MYSQL_PASSWORD_FILE: /run/secrets/nextcloud_mariadb_password
+      MYSQL_PASSWORD_FILE: /run/secrets/mariadb_root_password
       MYSQL_DATABASE: nextcloud
-      MYSQL_USER_FILE: /run/secrets/mariadb_root_password
+      - MYSQL_USER_FILE=${POSTGRESQL__NAME}
       MYSQL_HOST: mariadb
       REDIS_HOST: redis
       NEXTCLOUD_ADMIN_USER_FILE: /run/secrets/nextcloud_admin_user
