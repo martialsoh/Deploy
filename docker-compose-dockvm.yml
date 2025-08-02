@@ -21,6 +21,15 @@ secrets:
     file: $DOCKERDIR/secrets/basic_auth_credentials
   cf_dns_api_token:
     file: $DOCKERDIR/secrets/cf_dns_api_token
+ mariadb_root_password:
+    file: $DOCKERDIR/secrets/mariadb_root_password
+ nextcloud_admin_password:
+    file: $DOCKERDIR/secrets/nextcloud_admin_password
+ nextcloud_admin_password:
+    file: $DOCKERDIR/secrets/nextcloud_admin_password
+ nextcloud_admin_password:
+    file: $DOCKERDIR/secrets/nextcloud_admin_password
+
 
 include:
   ########################### SERVICES
