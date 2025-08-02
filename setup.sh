@@ -20,7 +20,7 @@ APPS=(
 )
 
 COMPOSE_DIR="/home/martial/docker/compose/$HOSTNAME"
-MAIN_COMPOSE="/home/martial/docker/docker-compose-vpn.yml"
+MAIN_COMPOSE="/home/martial/docker/docker-compose-vm.yml"
 BASIC_AUTH_FILE="/home/martial/docker/secrets/basic_auth_credentials"
 DOCKER_ROOT="/home/martial/docker"
 ENV_FILE="$DOCKER_ROOT/.env"
