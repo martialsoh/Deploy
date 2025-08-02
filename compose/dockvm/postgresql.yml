@@ -20,6 +20,6 @@ services:
     volumes:
       - $DOCKERDIR/appdata/postgresql:/var/lib/postgresql/data
     environment:
-      #- POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRESQL__USER}
       - POSTGRES_PASSWORD=${POSTGRESQL__PASSWORD}
