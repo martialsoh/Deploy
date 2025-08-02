@@ -21,8 +21,8 @@ services:
       - $DOCKERDIR/appdata/postgresql:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${AUTHENTIK_POSTGRESQL__USER}
-      - POSTGRES_PASSWORD_FILE=${AUTHENTIK_POSTGRESQL__PASSWORD}
+      - POSTGRES_USER=${POSTGRESQL__USER}
+      - POSTGRES_PASSWORD_FILE=${POSTGRESQL__PASSWORD}
     secrets:
       - postgres_default_password
     # DOCKER-LABELS-PLACEHOLDER
