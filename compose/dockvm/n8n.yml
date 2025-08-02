@@ -28,3 +28,5 @@ services:
       - N8N_PERSONALIZATION_ENABLED=false
       - N8N_EDITOR_BASE_URL=https://SUBDOMAIN-PLACEHOLDER.${DOMAINNAME_1}
       - WEBHOOK_URL=https://SUBDOMAIN-PLACEHOLDER.${DOMAINNAME_1}
+    secrets:
+      - postgres_default_password
