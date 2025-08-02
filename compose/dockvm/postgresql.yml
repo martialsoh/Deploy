@@ -23,6 +23,3 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRESQL__USER}
       - POSTGRES_PASSWORD_FILE=${POSTGRESQL__PASSWORD}
-    secrets:
-      - postgres_default_password
-    # DOCKER-LABELS-PLACEHOLDER
