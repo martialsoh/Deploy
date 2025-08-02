@@ -41,4 +41,3 @@ services:
       #- nextcloud_mariadb_password
       #- nextcloud_mariadb_user
       #- nextcloud_admin_user
-      - nextcloud_admin_password
