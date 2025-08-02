@@ -4,15 +4,15 @@
 # CONFIGURATION
 APPS=(
   "authentik-worker"
-  "Authentik"
-  "Dashy"
+  "authentik"
+  "dashy"
   "Jellyfin"
   "mariadb"
   "n8n"
   "nextcloud"
   "pihole"
   "portainer"
-  "Postgresql"
+  "postgresql"
   "prometheus"
   "redis"
   "socket-proxy"
