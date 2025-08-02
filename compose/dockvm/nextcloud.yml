@@ -25,7 +25,6 @@ services:
       MYSQL_USER_FILE: /run/secrets/mariadb_root_password
       MYSQL_HOST: mariadb
       REDIS_HOST: redis
-      - AUTHENTIK_POSTGRESQL__USER=${POSTGRESQL__USER}  
       NEXTCLOUD_ADMIN_USER_FILE: /run/secrets/nextcloud_admin_user
       NEXTCLOUD_ADMIN_PASSWORD_FILE: /run/secrets/nextcloud_admin_password
       # NEXTCLOUD_TRUSTED_DOMAINS: SUBDOMAIN-PLACEHOLDER.$DOMAINNAME_1
