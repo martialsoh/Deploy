@@ -33,8 +33,8 @@ services:
       # OVERWRITEHOST: SUBDOMAIN-PLACEHOLDER.$DOMAINNAME_1
       OVERWRITEPROTOCOL: https 
     secrets:
-      - nextcloud_mariadb_password
-      - nextcloud_mariadb_user
-      - nextcloud_admin_user
+      #- nextcloud_mariadb_password
+      #- nextcloud_mariadb_password
+      #- nextcloud_mariadb_user
+      #- nextcloud_admin_user
       - nextcloud_admin_password
-    # DOCKER-LABELS-PLACEHOLDER
