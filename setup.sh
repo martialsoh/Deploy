@@ -159,7 +159,7 @@ fi
 # ADD SELECTED APPS TO MAIN DOCKER-COMPOSE
 for app in "${unique_apps[@]}"; do
   YAML_FILE="$COMPOSE_DIR/${app}.yml"
-  INCLUDE_LINE="- compose/\$HOSTNAME/${app}.yml"
+  INCLUDE_LINE="  - compose/\$HOSTNAME/${app}.yml"
   if [[ -f "$YAML_FILE" ]]; then
     if grep -qF "$INCLUDE_LINE" "$MAIN_COMPOSE"; then
       echo "Entry for $app already exists in main compose file."
