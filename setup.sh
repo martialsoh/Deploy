@@ -151,7 +151,7 @@ if printf '%s\n' "${unique_apps[@]}" | grep -qi '^authentik$'; then
   AUTHENTIK_PG_PASS=$(openssl rand -base64 36 | tr -d '\n')
   AUTHENTIK_SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')
   echo "Setting up secrets for authentik in .env..."
-  echo "AUTHENTIK_POSTGRESQL__PASSWORD=$AUTHENTIK_PG_PASS" | sudo tee -a "$ENV_FILE" > /dev/null
+  echo "POSTGRESQL__PASSWORD=$AUTHENTIK_PG_PASS" | sudo tee -a "$ENV_FILE" > /dev/null
   echo "AUTHENTIK_SECRET_KEY=$AUTHENTIK_SECRET_KEY" | sudo tee -a "$ENV_FILE" > /dev/null
 fi
 
