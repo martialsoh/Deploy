@@ -21,17 +21,17 @@ secrets:
     file: $DOCKERDIR/secrets/basic_auth_credentials
   cf_dns_api_token:
     file: $DOCKERDIR/secrets/cf_dns_api_token
- mariadb_root_password:
+  mariadb_root_password:
     file: $DOCKERDIR/secrets/mariadb_root_password
- nextcloud_admin_password:
+  nextcloud_admin_password:
     file: $DOCKERDIR/secrets/nextcloud_admin_password
- postgres_default_password:
+  postgres_default_password:
     file: $DOCKERDIR/secrets/postgres_default_password
- authentik_postgres_password:
+  authentik_postgres_password:
     file: $DOCKERDIR/secrets/authentik_postgres_password
- n8n_postgres_password:
+  n8n_postgres_password:
     file: $DOCKERDIR/secrets/n8n_postgres_password
- authentik_secret_key:
+  authentik_secret_key:
     file: $DOCKERDIR/secrets/authentik_secret_key
 
 include:
