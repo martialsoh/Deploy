@@ -21,21 +21,17 @@ services:
         condition: service_healthy
     environment:
       - AUTHENTIK_REDIS__HOST=${REDIS__HOST}
-      - AUTHENTIK_POSTGRESQL__HOST=${POSTGRESQL__HOST}
-      - AUTHENTIK_POSTGRESQL__NAME=${POSTGRESQL__NAME}
-      - AUTHENTIK_POSTGRESQL__USER=${VM__USER}
-      #- AUTHENTIK_POSTGRESQL__PASSWORD=${POSTGRESQL__PASSWORD}
-      #- AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
-      - AUTHENTIK_POSTGRESQL__PASSWORD=/run/secrets/postgres_default_password
-      - AUTHENTIK_SECRET_KEY=/run/secrets/authentik_secret_key
+      - AUTHENTIK_POSTGRESQL__HOST=postgresql
+      - AUTHENTIK_POSTGRESQL__USER=${AUTHENTIK_DB_USER}
+      - AUTHENTIK_POSTGRESQL__NAME=${AUTHENTIK_DB}
+      - AUTHENTIK_POSTGRESQL__PASSWORD_FILE=/run/secrets/authentik_postgres_password
+      - AUTHENTIK_SECRET_KEY_FILE=/run/secrets/authentik_secret_key
       - AUTHENTIK_LOG_LEVEL=info
       - AUTHENTIK_DISABLE_STARTUP_ANALYTICS=true
       - AUTHENTIK_DISABLE_UPDATE_CHECK=false
       - AUTHENTIK_ERROR_REPORTING__ENABLED=false
     secrets:
-      #- authentik_postgresql_user
-      #- authentik_postgresql_password
-      - postgres_default_password
+      - authentik_postgres_password
       - authentik_secret_key
     volumes:
       - $DOCKERDIR/appdata/authentik/media:/media

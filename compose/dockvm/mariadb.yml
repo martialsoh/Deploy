@@ -14,7 +14,7 @@ services:
       - $DOCKERDIR/appdata/mariadb/data:/var/lib/mysql
       - $DOCKERDIR/appdata/mariadb/config:/etc/mysql
     environment:
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mariadb_root_password
     secrets:
       - mariadb_root_password
     healthcheck:

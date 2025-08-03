@@ -22,4 +22,4 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
       - '--web.enable-lifecycle'
       - '--web.enable-admin-api'
-    # DOCKER-LABELS-PLACEHOLDER
+      

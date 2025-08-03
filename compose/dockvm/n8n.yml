@@ -20,14 +20,13 @@ services:
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=${POSTGRESQL__HOST}
       - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
-      - DB_POSTGRESDB_USER=${VM__USER}
-      #- DB_POSTGRESDB_PASSWORD=${POSTGRESQL__PASSWORD}
-      - DB_POSTGRESDB_PASSWORD=/run/secrets/postgres_default_password
+      - DB_POSTGRESDB_DATABASE=${N8N_DB}
+      - DB_POSTGRESDB_USER=${N8N_DB_USER}
+      - DB_POSTGRESDB_PASSWORD_FILE=/run/secrets/n8n_postgres_password
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       - N8N_DIAGNOSTICS_ENABLED=false
       - N8N_PERSONALIZATION_ENABLED=false
       - N8N_EDITOR_BASE_URL=https://SUBDOMAIN-PLACEHOLDER.${DOMAINNAME_1}
       - WEBHOOK_URL=https://SUBDOMAIN-PLACEHOLDER.${DOMAINNAME_1}
     secrets:
-      - postgres_default_password
+      - n8n_postgres_password

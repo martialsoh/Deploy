@@ -27,6 +27,10 @@ secrets:
     file: $DOCKERDIR/secrets/nextcloud_admin_password
  postgres_default_password:
     file: $DOCKERDIR/secrets/postgres_default_password
+ authentik_postgres_password:
+    file: $DOCKERDIR/secrets/authentik_postgres_password
+ n8n_postgres_password:
+    file: $DOCKERDIR/secrets/n8n_postgres_password
  authentik_secret_key:
     file: $DOCKERDIR/secrets/authentik_secret_key
 

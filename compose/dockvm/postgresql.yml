@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     profiles: ["core", "all"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRESQL__USER}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       start_period: 20s
       interval: 30s
       retries: 5
@@ -16,13 +16,13 @@ services:
     networks:
       - default
     ports:
-      - "$POSTGRESQL_PORT:5432"
+      - "${POSTGRESQL_PORT:-5432}:5432"
     volumes:
       - $DOCKERDIR/appdata/postgresql:/var/lib/postgresql/data
+      - ${DOCKERDIR}/init-db:/docker-entrypoint-initdb.d  # Mount your init SQL here
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRESQL__USER}
-      #- POSTGRES_PASSWORD=${VM__USER}
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_default_password
     secrets:
       - postgres_default_password

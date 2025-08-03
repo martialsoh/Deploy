@@ -25,153 +25,299 @@ BASIC_AUTH_FILE="/home/martial/docker/secrets/basic_auth_credentials"
 DOCKER_ROOT="/home/martial/docker"
 ENV_FILE="$DOCKER_ROOT/.env"
 SECRETS_DIR="$DOCKER_ROOT/secrets"
+INITDB_SQL_DIR="$DOCKER_ROOT/init-db"
+INIT_SQL="$INITDB_SQL_DIR/init-multi-apps.sql"
 USER_MARTIAL="martial"
 
 # ============================================
-# REQUIRED SYSTEM PACKAGES
+# INSTALL REQUIRED SYSTEM PACKAGES
+echo "Updating package lists and installing required packages..."
 sudo apt update
 sudo apt install -y acl apache2-utils apt-transport-https argon2 ca-certificates curl gnupg \
   htop libnss-resolve lsb-release nano ncdu net-tools netcat-traditional ntp pwgen \
   software-properties-common ufw unzip zip
 
 # ============================================
-# DOCKER & DOCKER COMPOSE INSTALLATION
+# FUNCTION TO SELECT APPS
+select_apps() {
+  echo ""
+  echo "Available apps to install:"
+  for i in "${!APPS[@]}"; do
+    printf "%2d) %s\n" "$((i+1))" "${APPS[$i]}"
+  done
+  echo ""
 
-read -p "Would you like to install Docker and Docker Compose? [y/n]: " install_docker
-if [[ "$install_docker" =~ ^[Yy]$ ]]; then
-  if ! command -v docker &>/dev/null; then
-    echo "Docker not found. Installing Docker..."
-    sudo apt update
-    sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
-    sudo install -m 0755 -d /etc/apt/keyrings
-    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-    sudo chmod a+r /etc/apt/keyrings/docker.asc
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-        $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
-      sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt-get update
-    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    sudo groupadd docker || true
-    sudo usermod -aG docker $USER
-    newgrp docker
-    sudo systemctl enable --now docker
-  else
-    echo "Docker already installed."
-  fi
+  while true; do
+    read -r -p "Enter the number(s) of app(s) you want to install (e.g., 2 5 7 or comma-separated): " -a selections
 
-  if ! command -v docker-compose &>/dev/null && ! docker compose version &>/dev/null; then
-    echo "Docker Compose not found. Installing Docker Compose plugin..."
-    sudo curl -SL https://github.com/docker/compose/releases/download/v2.38.2/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
-  else
-    echo "Docker Compose already installed."
-  fi
-  echo "Docker and Docker Compose installation complete."
-else
-  echo "Skipping Docker and Docker Compose installation."
-fi
+    selected_apps=()
+    for num in "${selections[@]}"; do
+      # Support comma-separated input inside each array element
+      for splitnum in $(echo "$num" | tr ',' ' '); do
+        if [[ "$splitnum" =~ ^[0-9]+$ ]] && (( splitnum >= 1 && splitnum <= ${#APPS[@]} )); then
+          app="${APPS[splitnum-1]}"
+          selected_apps+=("$app")
+        else
+          echo "Invalid selection ignored: $splitnum"
+        fi
+      done
+    done
 
-# ============================================
-# FILE & FOLDER SECURITY & ACL SETUP
+    # Remove duplicates
+    unique_apps=($(printf "%s\n" "${selected_apps[@]}" | awk '!seen[$0]++'))
 
-# Secrets directory
-sudo mkdir -p "$SECRETS_DIR"
-sudo chown root:root "$SECRETS_DIR"
-sudo chmod 600 "$SECRETS_DIR"
-
-# Main .env file
-sudo touch "$ENV_FILE"
-sudo chown root:root "$ENV_FILE"
-sudo chmod 600 "$ENV_FILE"
-
-# Docker root folder permissions
-sudo apt install -y acl  # Ensure acl is present
-sudo chmod 775 "$DOCKER_ROOT"
-# Set default ACLs so 'martial' and 'docker' group have full access to everything below /home/martial/docker
-sudo setfacl -Rdm u:"$USER_MARTIAL":rwx "$DOCKER_ROOT"
-sudo setfacl -Rm u:"$USER_MARTIAL":rwx "$DOCKER_ROOT"
-sudo setfacl -Rdm g:docker:rwx "$DOCKER_ROOT"
-sudo setfacl -Rm g:docker:rwx "$DOCKER_ROOT"
-
-# ============================================
-# SELECT APPS
-echo ""
-echo "Available apps to install:"
-for i in "${!APPS[@]}"; do
-  printf "%2d) %s\n" "$((i+1))" "${APPS[$i]}"
-done
-
-echo ""
-read -p "Enter the number(s) of app(s) you want to install (e.g., 2 5 7): " -a selections
-
-selected_apps=()
-for num in "${selections[@]}"; do
-  # Support comma-separated numbers
-  for splitnum in $(echo "$num" | tr ',' ' '); do
-    if [[ "$splitnum" =~ ^[0-9]+$ ]] && (( splitnum >= 1 && splitnum <= ${#APPS[@]} )); then
-      app="${APPS[splitnum-1]}"
-      selected_apps+=("$app")
+    if [[ ${#unique_apps[@]} -gt 0 ]]; then
+      echo ""
+      echo "You have selected: ${unique_apps[*]}"
+      break
     else
-      echo "Invalid selection ignored: $splitnum"
+      echo "No valid apps selected. Please try again."
     fi
   done
-done
-
-# Remove duplicates
-unique_apps=($(printf "%s\n" "${selected_apps[@]}" | awk '!seen[$0]++'))
-
-if [[ ${#unique_apps[@]} -eq 0 ]]; then
-  echo "No valid apps selected. Exiting."
-  exit 1
-fi
-
-echo ""
-echo "You selected: ${unique_apps[*]}"
+}
 
 # ============================================
-# TRAEFIK - BASIC AUTH SETUP (if selected)
-if printf '%s\n' "${unique_apps[@]}" | grep -qi '^traefik$'; then
-  echo ""
-  echo "Traefik selected: Installing required packages and setting up basic auth..."
-  read -p "Enter HTTP_USERNAME for Traefik basic auth: " HTTP_USERNAME
-  read -sp "Enter HTTP_PASSWORD for Traefik basic auth: " HTTP_PASSWORD
-  echo ""
-  sudo mkdir -p "$(dirname "$BASIC_AUTH_FILE")"
-  sudo chown "$(whoami)":"$(whoami)" "$(dirname "$BASIC_AUTH_FILE")"
-  sudo htpasswd -cBb "$BASIC_AUTH_FILE" "$HTTP_USERNAME" "$HTTP_PASSWORD"
-  sudo chown root:root "$BASIC_AUTH_FILE"
-  sudo chmod 640 "$BASIC_AUTH_FILE"
-  echo "Basic auth credentials created at $BASIC_AUTH_FILE"
-fi
+# FUNCTION TO GENERATE POSTGRES INIT SQL
+generate_init_sql() {
+  echo "Generating PostgreSQL init SQL for databases and users..."
 
-# ============================================
-# GENERATE AUTHENTIK SECRETS IN .env IF SELECTED
-if printf '%s\n' "${unique_apps[@]}" | grep -qi '^authentik$'; then
-  AUTHENTIK_PG_PASS=$(openssl rand -base64 36 | tr -d '\n')
-  AUTHENTIK_SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')
-  echo "Setting up secrets for authentik in .env..."
-  echo "POSTGRESQL__PASSWORD=$AUTHENTIK_PG_PASS" | sudo tee -a "$ENV_FILE" > /dev/null
-  echo "AUTHENTIK_SECRET_KEY=$AUTHENTIK_SECRET_KEY" | sudo tee -a "$ENV_FILE" > /dev/null
-fi
+  mkdir -p "$INITDB_SQL_DIR"
 
-# ============================================
-# ADD SELECTED APPS TO MAIN DOCKER-COMPOSE
-for app in "${unique_apps[@]}"; do
-  YAML_FILE="$COMPOSE_DIR/${app}.yml"
-  INCLUDE_LINE="  - compose/\$HOSTNAME/${app}.yml"
-  if [[ -f "$YAML_FILE" ]]; then
-    if grep -qF "$INCLUDE_LINE" "$MAIN_COMPOSE"; then
-      echo "Entry for $app already exists in main compose file."
-    else
-      echo "Adding $INCLUDE_LINE to $MAIN_COMPOSE."
-      echo "$INCLUDE_LINE" | sudo tee -a "$MAIN_COMPOSE" >/dev/null
-    fi
-  else
-    echo "WARNING: YAML file for ${app} not found at $YAML_FILE."
+  # Read secrets if they exist, else empty string
+  AUTHENTIK_PASS=""
+  N8N_PASS=""
+
+  if [[ -f "$SECRETS_DIR/authentik_postgres_password" ]]; then
+    AUTHENTIK_PASS=$(cat "$SECRETS_DIR/authentik_postgres_password")
   fi
-done
 
-echo ""
-echo "Setup complete. To start or restart your services, run:"
-echo "docker compose --profile all -f $MAIN_COMPOSE up -d"
+  if [[ -f "$SECRETS_DIR/n8n_postgres_password" ]]; then
+    N8N_PASS=$(cat "$SECRETS_DIR/n8n_postgres_password")
+  fi
+
+  # Start fresh
+  cat > "$INIT_SQL" <<EOF
+-- PostgreSQL initialization script generated by setup
+
+EOF
+
+  # Append Authentik SQL if password set
+  if [[ -n "$AUTHENTIK_PASS" ]]; then
+    cat >> "$INIT_SQL" <<EOF
+
+-- Authentik
+DO
+\$do\$
+BEGIN
+   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'authentik_user') THEN
+      CREATE USER authentik_user WITH ENCRYPTED PASSWORD '${AUTHENTIK_PASS}';
+   END IF;
+END
+\$do\$;
+
+CREATE DATABASE authentik_db OWNER authentik_user;
+
+GRANT ALL PRIVILEGES ON DATABASE authentik_db TO authentik_user;
+
+EOF
+  fi
+
+  # Append n8n SQL if password set
+  if [[ -n "$N8N_PASS" ]]; then
+    cat >> "$INIT_SQL" <<EOF
+
+-- n8n
+DO
+\$do\$
+BEGIN
+   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'n8n_user') THEN
+      CREATE USER n8n_user WITH ENCRYPTED PASSWORD '${N8N_PASS}';
+   END IF;
+END
+\$do\$;
+
+CREATE DATABASE n8n_db OWNER n8n_user;
+
+GRANT ALL PRIVILEGES ON DATABASE n8n_db TO n8n_user;
+
+EOF
+  fi
+
+  echo "Wrote $INIT_SQL"
+}
+
+# ============================================
+# MAIN SCRIPT LOOP
+while :; do
+  echo "==== App Selection ===="
+  select_apps
+
+  # Enforce authentik & authentik-worker dependency apps
+  while true; do
+    if printf '%s\n' "${unique_apps[@]}" | grep -Eiq '^(authentik|authentik-worker)$'; then
+      echo ""
+      echo "authentik or authentik-worker selected."
+      echo "Required apps for these must be installed IN ORDER:"
+      echo "1) postgresql"
+      echo "2) redis"
+      echo "3) authentik"
+      echo "4) authentik-worker"
+      read -r -p "Would you like to install these required apps in order? [y/n]: " resp
+      if [[ "$resp" =~ ^[Yy]$ ]]; then
+        required_apps=(postgresql redis authentik authentik-worker)
+        extra_apps=()
+        for app in "${unique_apps[@]}"; do
+          found=false
+          for r in "${required_apps[@]}"; do
+            [[ "$app" == "$r" ]] && found=true && break
+          done
+          $found || extra_apps+=("$app")
+        done
+        unique_apps=("${required_apps[@]}" "${extra_apps[@]}")
+        echo "Final app install order: ${unique_apps[*]}"
+        break
+      else
+        echo "You declined the required app installation for authentik."
+        echo "Please re-select your apps."
+        continue 2  # restart from main loop to re-select apps
+      fi
+    else
+      # No authentik or authentik-worker selected, proceed
+      break
+    fi
+  done
+
+  echo ""
+  echo "==== Preparing secrets directory ===="
+  sudo mkdir -p "$SECRETS_DIR"
+  sudo chown "$USER_MARTIAL":"$USER_MARTIAL" "$SECRETS_DIR"
+
+  echo "==== Generating secrets and passwords (if applicable) ===="
+
+  # PostgreSQL password setup
+  if printf '%s\n' "${unique_apps[@]}" | grep -iq '^postgresql$'; then
+    POSTGRES_PASSWORD_FILE="$SECRETS_DIR/postgres_default_password"
+    echo "Creating PostgreSQL password at $POSTGRES_PASSWORD_FILE ..."
+    POSTGRES_PG_PASS=$(openssl rand -base64 36 | tr -d '\n')
+    echo "$POSTGRES_PG_PASS" | sudo tee "$POSTGRES_PASSWORD_FILE" >/dev/null
+    sudo chmod 600 "$POSTGRES_PASSWORD_FILE"
+    echo "PostgreSQL password generated."
+  fi
+
+  # N8N password setup
+  if printf '%s\n' "${unique_apps[@]}" | grep -iq '^n8n$'; then
+    N8N_POSTGRES_PASSWORD_FILE="$SECRETS_DIR/n8n_postgres_password"
+    echo "Creating N8N PostgreSQL password at $N8N_POSTGRES_PASSWORD_FILE ..."
+    N8N_POSTGRES_PASSWORD=$(openssl rand -base64 36 | tr -d '\n')
+    echo "$N8N_POSTGRES_PASSWORD" | sudo tee "$N8N_POSTGRES_PASSWORD_FILE" >/dev/null
+    sudo chmod 600 "$N8N_POSTGRES_PASSWORD_FILE"
+    echo "N8N PostgreSQL password generated."
+  fi
+
+  # Traefik basic auth setup
+  if printf '%s\n' "${unique_apps[@]}" | grep -iq '^traefik$'; then
+    echo ""
+    echo "Setting up Traefik basic auth credentials..."
+    read -r -p "Enter HTTP_USERNAME for Traefik basic auth: " HTTP_USERNAME
+    read -r -s -p "Enter HTTP_PASSWORD for Traefik basic auth: " HTTP_PASSWORD
+    echo ""
+    sudo mkdir -p "$(dirname "$BASIC_AUTH_FILE")"
+    sudo chown "$USER_MARTIAL":"$USER_MARTIAL" "$(dirname "$BASIC_AUTH_FILE")"
+    sudo htpasswd -cBb "$BASIC_AUTH_FILE" "$HTTP_USERNAME" "$HTTP_PASSWORD"
+    sudo chown root:root "$BASIC_AUTH_FILE"
+    sudo chmod 640 "$BASIC_AUTH_FILE"
+    echo "Basic auth credentials created at $BASIC_AUTH_FILE."
+  fi
+
+  # Authentik secret key and postgres password generation
+  if printf '%s\n' "${unique_apps[@]}" | grep -iq '^authentik$'; then
+    AUTHENTIK_SECRET_FILE="$SECRETS_DIR/authentik_secret_key"
+    AUTHENTIK_POSTGRES_PASS_FILE="$SECRETS_DIR/authentik_postgres_password"
+    echo "Generating Authentik secret key at $AUTHENTIK_SECRET_FILE ..."
+    AUTHENTIK_SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')
+    echo "$AUTHENTIK_SECRET_KEY" | sudo tee "$AUTHENTIK_SECRET_FILE" >/dev/null
+    sudo chmod 600 "$AUTHENTIK_SECRET_FILE"
+
+    echo "Generating Authentik postgres password at $AUTHENTIK_POSTGRES_PASS_FILE ..."
+    AUTHENTIK_POSTGRES_PASS=$(openssl rand -base64 60 | tr -d '\n')
+    echo "$AUTHENTIK_POSTGRES_PASS" | sudo tee "$AUTHENTIK_POSTGRES_PASS_FILE" >/dev/null
+    sudo chmod 600 "$AUTHENTIK_POSTGRES_PASS_FILE"
+    echo "Authentik secret key and postgres password generated."
+  fi
+
+  # MariaDB root password generation
+  if printf '%s\n' "${unique_apps[@]}" | grep -iq '^mariadb$'; then
+    MARIADB_PASSWORD_FILE="$SECRETS_DIR/mariadb_root_password"
+    echo "Generating MariaDB root password at $MARIADB_PASSWORD_FILE ..."
+    MARIADB_ROOT_PASSWORD=$(openssl rand -base64 60 | tr -d '\n')
+    echo "$MARIADB_ROOT_PASSWORD" | sudo tee "$MARIADB_PASSWORD_FILE" >/dev/null
+    sudo chmod 600 "$MARIADB_PASSWORD_FILE"
+    echo "MariaDB root password generated."
+  fi
+
+  # Nextcloud password prompt
+  if printf '%s\n' "${unique_apps[@]}" | grep -iq '^nextcloud$'; then
+    NEXTCLOUD_PASSWORD_FILE="$SECRETS_DIR/nextcloud_admin_password"
+    sudo touch "$NEXTCLOUD_PASSWORD_FILE"
+    sudo chmod 600 "$NEXTCLOUD_PASSWORD_FILE"
+    echo "Please enter password for Nextcloud admin (input hidden):"
+    while true; do
+      read -r -s -p "Password: " NEXTCLOUD_ADMIN_PASS
+      echo ""
+      read -r -s -p "Confirm Password: " NEXTCLOUD_ADMIN_PASS_CONFIRM
+      echo ""
+      if [[ "$NEXTCLOUD_ADMIN_PASS" == "$NEXTCLOUD_ADMIN_PASS_CONFIRM" ]] && [[ -n "$NEXTCLOUD_ADMIN_PASS" ]]; then
+        echo "$NEXTCLOUD_ADMIN_PASS" | sudo tee "$NEXTCLOUD_PASSWORD_FILE" >/dev/null
+        echo "Nextcloud admin password saved."
+        break
+      else
+        echo "Passwords do not match or empty, please try again."
+      fi
+    done
+  fi
+
+  # Generate PostgreSQL initialization SQL for multi-app DB/user creation
+  generate_init_sql
+
+  echo ""
+  echo "==== Adding selected apps to main docker-compose file ===="
+  for app in "${unique_apps[@]}"; do
+    YAML_FILE="$COMPOSE_DIR/${app}.yml"
+    INCLUDE_LINE="  - compose/\$HOSTNAME/${app}.yml"
+    if [[ -f "$YAML_FILE" ]]; then
+      if grep -qF "$INCLUDE_LINE" "$MAIN_COMPOSE"; then
+        echo "Entry for '$app' already exists in $MAIN_COMPOSE."
+      else
+        echo "Adding entry for '$app' to $MAIN_COMPOSE ..."
+        echo "$INCLUDE_LINE" | sudo tee -a "$MAIN_COMPOSE" >/dev/null
+      fi
+    else
+      echo "WARNING: YAML file for '$app' not found at: $YAML_FILE"
+    fi
+  done
+
+  echo ""
+  echo "Setup complete."
+  echo "You can start or restart your services with:"
+  echo "docker compose --profile all -f $MAIN_COMPOSE up -d"
+  echo ""
+
+  # Prompt user to exit or reload selections
+  while true; do
+    read -r -p "Would you like to exit the setup script? [y/n]: " exit_choice
+    case "$exit_choice" in
+      [Yy]* )
+        echo "Exiting setup script. Goodbye!"
+        exit 0
+        ;;
+      [Nn]* )
+        echo "Restarting app selection..."
+        break
+        ;;
+      * )
+        echo "Please enter 'y' for yes or 'n' for no."
+        ;;
+    esac
+  done
+
+done
