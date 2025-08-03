@@ -6,7 +6,7 @@ APPS=(
   "authentik-worker"
   "authentik"
   "dashy"
-  "Jellyfin"
+  "jellyfin"
   "mariadb"
   "n8n"
   "nextcloud"
