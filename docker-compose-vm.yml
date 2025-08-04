@@ -38,5 +38,3 @@ include:
   ########################### SERVICES
   # HOSTNAME defined in .env file
   - compose/$HOSTNAME/socket-proxy.yml
-
-
