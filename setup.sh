@@ -203,6 +203,9 @@ while :; do
     echo "$POSTGRES_PG_PASS" | sudo tee "$POSTGRES_PASSWORD_FILE" >/dev/null
     sudo chmod 600 "$POSTGRES_PASSWORD_FILE"
     echo "PostgreSQL password generated."
+    # setup proper permissions.
+    mkdir -p $DOCKER_ROOT/appdata/postgresql
+    sudo chown -R "$USER_MARTIAL":"$USER_MARTIAL" "$DOCKER_ROOT/appdata/postgresql"
   fi
 
   # N8N password setup
