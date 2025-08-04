@@ -17,6 +17,7 @@ APPS=(
   "redis"
   "socket-proxy"
   "traefik"
+  "vaultwarden"
 )
 
 COMPOSE_DIR="/home/martial/docker/compose/$HOSTNAME"
