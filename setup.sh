@@ -24,6 +24,7 @@ COMPOSE_DIR="/home/martial/docker/compose/$HOSTNAME"
 MAIN_COMPOSE="/home/martial/docker/docker-compose-vm.yml"
 BASIC_AUTH_FILE="/home/martial/docker/secrets/basic_auth_credentials"
 DOCKER_ROOT="/home/martial/docker"
+APPDATA_ROOT="$DOCKER_ROOT/appdata/traefik3"
 ENV_FILE="$DOCKER_ROOT/.env"
 SECRETS_DIR="$DOCKER_ROOT/secrets"
 INITDB_SQL_DIR="$DOCKER_ROOT/init-db"
@@ -221,6 +222,8 @@ while :; do
   # Traefik basic auth setup
   if printf '%s\n' "${unique_apps[@]}" | grep -iq '^traefik$'; then
     echo ""
+    echo "setting proper permission for acme.json"
+    chmod 600 "$APPDATA_ROOT/acme/acme.json"
     echo "Setting up Traefik basic auth credentials..."
     read -r -p "Enter HTTP_USERNAME for Traefik basic auth: " HTTP_USERNAME
     read -r -s -p "Enter HTTP_PASSWORD for Traefik basic auth: " HTTP_PASSWORD
