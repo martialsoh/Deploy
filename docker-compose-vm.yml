@@ -38,6 +38,5 @@ include:
   ########################### SERVICES
   # HOSTNAME defined in .env file
   - compose/$HOSTNAME/socket-proxy.yml
-  - compose/$HOSTNAME/traefik.yml
-  # - compose/$HOSTNAME/portainer.yml
+
 
