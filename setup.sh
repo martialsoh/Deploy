@@ -223,7 +223,7 @@ while :; do
   if printf '%s\n' "${unique_apps[@]}" | grep -iq '^traefik$'; then
     echo ""
     echo "setting proper permission for acme.json"
-    chmod 600 "$APPDATA_ROOT/acme/acme.json"
+    sudo chmod 600 "$APPDATA_ROOT/acme/acme.json"
     echo "Setting up Traefik basic auth credentials..."
     read -r -p "Enter HTTP_USERNAME for Traefik basic auth: " HTTP_USERNAME
     read -r -s -p "Enter HTTP_PASSWORD for Traefik basic auth: " HTTP_PASSWORD
