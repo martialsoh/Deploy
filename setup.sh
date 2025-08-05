@@ -209,6 +209,15 @@ while :; do
     sudo chown -R "$USER_MARTIAL":"$USER_MARTIAL" "$DOCKER_ROOT/appdata/postgresql"
   fi
 
+    # Setting up proper permission for redis
+  if printf '%s\n' "${unique_apps[@]}" | grep -iq '^redis$'; then
+    echo ""
+    echo "==== Setting proper permission ===="
+    # setup proper permissions.
+    mkdir -p $DOCKER_ROOT/appdata/redis
+    sudo chown -R "$USER_MARTIAL":"$USER_MARTIAL" "$DOCKER_ROOT/appdata/redis"
+  fi
+
   # N8N password setup
   if printf '%s\n' "${unique_apps[@]}" | grep -iq '^n8n$'; then
     N8N_POSTGRES_PASSWORD_FILE="$SECRETS_DIR/n8n_postgres_password"
