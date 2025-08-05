@@ -260,6 +260,10 @@ while :; do
     echo "$AUTHENTIK_POSTGRES_PASS" | sudo tee "$AUTHENTIK_POSTGRES_PASS_FILE" >/dev/null
     sudo chmod 600 "$AUTHENTIK_POSTGRES_PASS_FILE"
     echo "Authentik secret key and postgres password generated."
+
+    echo ""
+    echo "creating a database called authentik"
+    sudo docker exec -it postgresql psql -U "postgres_user" -c "CREATE DATABASE authentik;"
   fi
 
   # MariaDB root password generation
