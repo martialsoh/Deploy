@@ -19,7 +19,7 @@ services:
       - "${POSTGRESQL_PORT:-5432}:5432"
     volumes:
       - $DOCKERDIR/appdata/postgresql:/var/lib/postgresql/data
-      - ${DOCKERDIR}/init-db:/docker-entrypoint-initdb.d  # Mount your init SQL here
+      #- ${DOCKERDIR}/init-db:/docker-entrypoint-initdb.d  # Mount your init SQL here
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
