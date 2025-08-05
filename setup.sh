@@ -253,8 +253,9 @@ while :; do
     echo "Generating Authentik secret key at $AUTHENTIK_SECRET_FILE ..."
     AUTHENTIK_SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')
     echo "$AUTHENTIK_SECRET_KEY" | sudo tee "$AUTHENTIK_SECRET_FILE" >/dev/null
-    sudo chmod 600 "$AUTHENTIK_SECRET_FILE"
-
+    sudo chmod 600 "$AUTHENTIK_SECRET_FILE  	
+    sudo chmod 644 authentik_*
+    
     echo "Generating Authentik postgres password at $AUTHENTIK_POSTGRES_PASS_FILE ..."
     AUTHENTIK_POSTGRES_PASS=$(openssl rand -base64 60 | tr -d '\n')
     echo "$AUTHENTIK_POSTGRES_PASS" | sudo tee "$AUTHENTIK_POSTGRES_PASS_FILE" >/dev/null
@@ -264,6 +265,16 @@ while :; do
     echo ""
     echo "creating a database called authentik"
     sudo docker exec -it postgresql psql -U "postgres_user" -c "CREATE DATABASE authentik;"
+  # create new user called authentik_db_user with the password we generated as a secret previously.
+    sudo docker exec -it postgresql psql -U "postgres_user" -c "CREATE USER authentik_db_user WITH PASSWORD 'authentik_postgresql_password';"
+  # give authentik_db_user, required permissions to manage the authentik database
+    sudo docker exec -it postgresql psql -U "postgres_user" -c "GRANT ALL PRIVILEGES ON DATABASE authentik TO authentik_db_user;"
+  # grant schema permissions of authentik database to authentik_db_user:
+    sudo docker exec -it postgresql psql -U "postgres_user" -c "ALTER DATABASE authentik OWNER TO authentik_db_user;"
+    sudo docker exec -it postgresql psql -U "postgres_user" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO authentik_db_user;"
+    sudo docker exec -it postgresql psql -U "postgres_user" -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO authentik_db_user;"
+    sudo docker exec -it postgresql psql -U "postgres_user" -c "GRANT CREATE ON SCHEMA public TO authentik_db_user;"
+  
   fi
 
   # MariaDB root password generation
