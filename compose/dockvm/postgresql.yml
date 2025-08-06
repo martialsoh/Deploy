@@ -21,7 +21,7 @@ services:
       - $DOCKERDIR/appdata/postgresql:/var/lib/postgresql/data
       #- ${DOCKERDIR}/init-db:/docker-entrypoint-initdb.d  # Mount your init SQL here
     environment:
-      - POSTGRES_DB=${POSTGRES_DB}
+      #- POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_default_password
     secrets:
