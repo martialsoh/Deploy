@@ -1,0 +1,26 @@
+elay:
+  image: netbirdio/relay:latest
+  container_name: netbird-relay
+  restart: unless-stopped
+  env_file:
+    - relay.env
+    - common.env
+  labels:
+    - traefik.enable=true
+    - traefik.http.routers.netbird-relay.rule=Host("netbird.mydomain.com") && PathPrefix("/relay")
+    - traefik.http.routers.netbird-relay.entrypoints=websecure
+    - traefik.http.routers.netbird-relay.service=netbird-relay-service
+    - traefik.http.services.netbird-relay-service.loadbalancer.server.port=33080
+
+# And in relay.env:
+NB_LOG_LEVEL=info
+NB_LISTEN_ADDRESS=:33080
+NB_EXPOSED_ADDRESS=rels://netbird.mydomain.com:443/relay
+NB_AUTH_SECRET=yoursecret
+
+#Then, in your Netbird management config (json), set:
+"Relay": {
+    "Addresses": ["rels://netbird.mydomain.com:443/relay"],
+    "CredentialsTTL": "24h",
+    "Secret": "yoursecret"
+}
