@@ -148,3 +148,163 @@ networks:
   netbird:
     external: true
 
+----------------------------------------------------------------------
+x-default: &default
+  restart: 'unless-stopped'
+  logging:
+    driver: 'json-file'
+    options:
+      max-size: '500m'
+      max-file: '2'
+
+services:
+  # UI dashboard
+  dashboard:
+    <<: *default
+    image: netbirdio/dashboard:latest
+    #ports:
+    #  - 80:80
+    #  - 443:443
+    environment:
+      # Endpoints
+      - NETBIRD_MGMT_API_ENDPOINT=https://netbird.tecksoh.org:443
+      - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://netbird.tecksoh.org:443
+      # OIDC
+      - AUTH_AUDIENCE=J0tFe2NM4Q55K0isrx1Me93Prabb4EWe9bCg5yk5
+      - AUTH_CLIENT_ID=J0tFe2NM4Q55K0isrx1Me93Prabb4EWe9bCg5yk5
+      - AUTH_CLIENT_SECRET=
+      - AUTH_AUTHORITY=https://authentik.tecksoh.org/application/o/netbird/
+      - USE_AUTH0=false
+      - AUTH_SUPPORTED_SCOPES=openid profile email offline_access api
+      - AUTH_REDIRECT_URI=/auth
+      - AUTH_SILENT_REDIRECT_URI=/silent-auth
+      - NETBIRD_TOKEN_SOURCE=accessToken
+      # SSL
+    #  - NGINX_SSL_PORT=443
+      # Letsencrypt
+    #  - LETSENCRYPT_DOMAIN=
+    #  - LETSENCRYPT_EMAIL=
+    volumes:
+      - netbird-letsencrypt:/etc/letsencrypt/
+    networks:
+      - t3_proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.netbird-dashboard.entrypoints=https,http
+      - traefik.http.routers.netbird-dashboard.rule=Host(`netbird.tecksoh.org`)
+      - traefik.http.routers.netbird-dashboard.tls=true
+      - traefik.http.routers.netbird-dashboard.service=netbird@docker
+      - traefik.http.services.netbird.loadbalancer.server.port=80
+      - traefik.docker.network=t3_proxy
+
+  # Signal
+  signal:
+    <<: *default
+    image: netbirdio/signal:latest
+    volumes:
+      - netbird-signal:/var/lib/netbird
+    #ports:
+    #  - 443:80
+  #      # port and command for Let's Encrypt validation
+  #      - 443:443
+  #    command: ["--letsencrypt-domain", "", "--log-file", "console"]
+    networks:
+      - t3_proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.netbird-signal.entrypoints=https,http
+      - traefik.http.routers.netbird-signal.rule=Host(`netbird.tecksoh.org`) && PathPrefix(`/signalexchange.SignalExchange/`)
+      - traefik.http.routers.netbird-signal.tls=true
+      - traefik.http.routers.netbird-signal.service=signal@docker
+      - traefik.http.services.signal.loadbalancer.server.port=80
+      - traefik.http.services.signal.loadbalancer.server.scheme=h2c
+      - traefik.docker.network=t3_proxy
+
+  # Relay
+  relay:
+    <<: *default
+    image: netbirdio/relay:latest
+    environment:
+      - NB_LOG_LEVEL=info
+      - NB_LISTEN_ADDRESS=:33080
+      - NB_EXPOSED_ADDRESS=rels://netbird.tecksoh.org:33080/relay
+    # todo: change to a secure secret
+      - NB_AUTH_SECRET=0i62M0E3HZnfBhDlzyE7QggfyDUp+noHlS8OmZ6AHVs
+    #ports:
+    #  - 33080:33080
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.netbird-relay.rule=Host("netbird.tecksoh.org") && PathPrefix("/relay")
+      - traefik.http.routers.netbird-relay.entrypoints=https,http
+      - traefik.http.routers.netbird-relay.service=netbird-relay-service
+      - traefik.http.services.netbird-relay-service.loadbalancer.server.port=33080
+    networks:
+      - t3_proxy
+
+  # Management
+  management:
+    <<: *default
+    image: netbirdio/management:latest
+    depends_on:
+      - dashboard
+    volumes:
+      - netbird-mgmt:/var/lib/netbird
+      - netbird-letsencrypt:/etc/letsencrypt:ro
+      - ./management.json:/etc/netbird/management.json
+    #ports:
+    #  - 443:443 #API port
+  #    # command for Let's Encrypt validation without dashboard container
+  #    command: ["--letsencrypt-domain", "", "--log-file", "console"]
+    command: [
+      "--port", "443",
+      "--log-file", "console",
+      "--log-level", "info",
+      "--disable-anonymous-metrics=false",
+      "--single-account-mode-domain=netbird.tecksoh.org",
+      "--dns-domain=netbird.selfhosted"
+      ]
+    environment:
+      - NETBIRD_STORE_ENGINE_POSTGRES_DSN=
+      - NETBIRD_STORE_ENGINE_MYSQL_DSN=
+    networks:
+      - t3_proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.netbird-api.entrypoints=https,http
+      - traefik.http.routers.netbird-api.rule=Host(`netbird.tecksoh.org`) && PathPrefix(`/api`)
+      - traefik.http.routers.netbird-api.tls=true
+      - traefik.http.routers.netbird-api.service=api
+      - traefik.http.services.api.loadbalancer.server.port=443
+
+      - traefik.http.routers.netbird-management.entrypoints=https,http
+      - traefik.http.routers.netbird-management.rule=Host(`netbird.tecksoh.org`) && PathPrefix(`/management.ManagementService/`)
+      - traefik.http.routers.netbird-management.tls=true
+      - traefik.http.routers.netbird-management.service=netbird-management
+      - traefik.http.services.netbird-management.loadbalancer.server.port=443
+      - traefik.http.services.netbird-management.loadbalancer.server.scheme=h2c
+
+      - traefik.docker.network=t3_proxy
+      
+  # Coturn
+  coturn:
+    <<: *default
+    image: coturn/coturn:latest
+    #domainname: netbird.tecksoh.org # only needed when TLS is enabled
+    volumes:
+      - ./turnserver.conf:/etc/turnserver.conf:ro
+    #      - ./privkey.pem:/etc/coturn/private/privkey.pem:ro
+    #      - ./cert.pem:/etc/coturn/certs/cert.pem:ro
+    network_mode: host
+    command:
+      - -c /etc/turnserver.conf
+
+volumes:
+  netbird-mgmt:
+  netbird-signal:
+  netbird-letsencrypt:
+
+networks:
+  t3_proxy:
+    external: true
+
+
